@@ -12,7 +12,7 @@ The onboard software stack running on linux based SBC (tested on raspberry pi 4)
 ## Components
 
 ### MAVLink Daemon
-Bidirectional MAVLink router. Reads telemetry from FC and forwards to GCS. Receives commands from GCS and forwards to FC. Maintains single UART connection to FC and single network Connection to GCS over the active link.
+Bidirectional MAVLink router. mavlink-router for simple forwarding over wifi. Reads telemetry from FC and forwards to GCS. Receives commands from GCS and forwards to FC. Maintains single UART connection to FC and single network Connection to GCS over the active link.
 
 ### Link Manager
 Decides which physical link is active based on signal quality and priority. Designed so adding a new link type (LoRa, LTE, 5G) in a single registration - no changes to core logic.

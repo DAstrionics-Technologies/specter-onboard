@@ -1,6 +1,20 @@
 #!bin/bash
 set -e
 
+echo "--- Wifi Setup ---"
+
+# Install hostapd and dnsmasq
+sudo apt install -y hostapd dnsmasq
+
+sudo cp scripts/wifi-start.sh /usr/local/bin/
+sudo chmod +x /usr/local/bin/wifi-start.sh
+sudo cp services/drone-wifi.service /etc/systemd/system/
+sudo cp config/hostapd.conf /etc/hostapd/
+sudo systemctl disable hostapd dnsmasq
+sudo systemctl daemon-reload
+sudo systemctl enable drone-wifi
+
+
 echo "--- Drone Onboard Setup ---"
 
 # Install mavlink-router

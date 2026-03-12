@@ -5,7 +5,7 @@ echo "--- Drone Onboard Setup ---"
 
 # Install mavlink-router
 sudo apt update
-sudo apt install -y git meson ninja-build pkg-config gcc g++ systemd
+sudo apt install -y git meson ninja-build pkg-config gcc g++ systemd systemd-dev
 git clone https://github.com/mavlink-router/mavlink-router /tmp/mavlink-router
 cd /tmp/mavlink-router
 git submodule update --init --recursive

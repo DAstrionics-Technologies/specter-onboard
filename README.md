@@ -35,16 +35,20 @@ sudo raspi-config
 # Reboot
 sudo reboot
 ``` 
-### 3. Mavlink and Video Setup
+
+### 3. Clone the repo
 
 ```bash
-# 1. Clone the repo
+# Clone the repo
 git clone https://github.com/DAstrionics-Technologies/specter-onboard
 cd specter-onboard
+```
 
-# 2. Make the setup script executable and run it
-chmod +x scripts/setup.sh && ./scripts/setup.sh
+### 4. Mavlink and Video Setup
 
+```bash
+# Make the setup script executable and run it
+chmod +x install.sh && ./install.sh
 ```
 
 

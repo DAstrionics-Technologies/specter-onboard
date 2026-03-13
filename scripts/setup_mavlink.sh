@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 set -e
 
 echo "--- Wifi Setup ---"
@@ -18,7 +18,6 @@ sudo systemctl enable drone-wifi
 echo "--- Drone Onboard Setup ---"
 
 # Install mavlink-router
-sudo apt update
 sudo apt install -y git meson ninja-build pkg-config gcc g++ systemd systemd-dev
 git clone https://github.com/mavlink-router/mavlink-router /tmp/mavlink-router
 cd /tmp/mavlink-router

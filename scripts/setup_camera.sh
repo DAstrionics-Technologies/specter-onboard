@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 set -e
 
 echo "---Installing Gstreamer---"
@@ -13,7 +13,7 @@ sudo apt install -y \
 
 # Create a systemd service
 
-sudo cp systemd/camera-relay.service /etc/systemd/system/camera-relay.service
+sudo cp ../systemd/camera-relay.service /etc/systemd/system/camera-relay.service
 
 sudo systemctl daemon-reload
 sudo systemctl enable camera-relay

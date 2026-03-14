@@ -1,3 +1,11 @@
+## devlog.md - baseline measurements
+
+- Boot to first heartbeat: ?ms
+- Mavlink latency: ?ms
+- Video latency (eyeball): ?ms
+- CPU usage while streaming: ?
+- RAM usage while streaming: ?
+
 ## 2026-03-10
 - Created the repo
 - Created org and moved the repo in the org
@@ -14,3 +22,8 @@
 - Created .gitattributes file with eol=lf (windows file ending)
 - Fixed systemd package not found while building mavlink-router
 - Created script to automate dnsmasq setup
+
+## 2026-03-13
+- Mavlink and video stream is working
+- Reconnection logic is working
+- automatic connection is working

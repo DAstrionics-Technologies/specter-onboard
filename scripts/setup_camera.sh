@@ -11,9 +11,16 @@ sudo apt install -y \
   gstreamer1.0-plugins-bad \
   gstreamer1.0-libav
 
-# Create a systemd service
+# Copy camera-relay.sh to /opt/da/camera-relay.sh
+sudo cp ./camera-relay.sh /opt/da/camera-relay.sh
+sudo chmod +x /opt/da/camera-relay.sh
 
-sudo cp ../systemd/camera-relay.service /etc/systemd/system/camera-relay.service
+# Copy camera-relay.env to /etc/specter/camera-relay.env
+sudo mkdir -p /etc/specter
+sudo cp ./camera-relay.env /etc/specter/camera-relay.env
+
+# Create a systemd service
+sudo cp ~/specter-onboard/systemd/camera-relay.service /etc/systemd/system/camera-relay.service
 
 sudo systemctl daemon-reload
 sudo systemctl enable camera-relay

@@ -1,13 +1,19 @@
 #!/bin/bash
+set -e
 
-sudo apt update -y
+# Get directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-cd scripts
-sudo chmod +x wifi-start.sh
-sudo chmod +x setup_mavlink.sh
-sudo chmod +x setup_camera.sh
+echo "--- Running Setup Scripts ---"
 
+# Ensure scripts are executable
+chmod +x "$SCRIPT_DIR/scripts/wifi-start.sh"
+chmod +x "$SCRIPT_DIR/scripts/setup_mavlink.sh"
+chmod +x "$SCRIPT_DIR/scripts/setup_camera.sh"
 
-sudo ./wifi-start.sh
-sudo ./setup_mavlink.sh
-sudo ./setup_camera.sh
+# Run them
+sudo bash "$SCRIPT_DIR/scripts/wifi-start.sh"
+sudo bash "$SCRIPT_DIR/scripts/setup_mavlink.sh"
+sudo bash "$SCRIPT_DIR/scripts/setup_camera.sh"
+
+echo "--- Setup Complete ---"

@@ -1,4 +1,16 @@
 #!/bin/bash
+
+# Install hostapd and dnsmasq
+sudo apt install -y hostapd dnsmasq
+
+sudo cp $SCRIPT_DIR/scripts/wifi-start.sh /usr/local/bin/
+sudo chmod +x /usr/local/bin/wifi-start.sh
+sudo cp $SCRIPT_DIR/systemd/drone-wifi.service /etc/systemd/system/drone-wifi.service
+# sudo cp config/hostapd.conf /etc/hostapd/
+sudo systemctl disable hostapd dnsmasq
+sudo systemctl daemon-reload
+sudo systemctl enable drone-wifi
+
 # Wait for wlan1 to exist
 for i in $(seq 1 30); do
     if ip link show wlan1 &>/dev/null; then

@@ -1,4 +1,3 @@
-# /etc/systemd/system/camera-relay.service
 [Unit]
 Description=Camera RTSP Relay
 After=network-online.target
@@ -12,4 +11,4 @@ Restart=always
 RestartSec=5
 
 [Install]
-WantedBy=multi-user-default.target
+WantedBy=multi-user.target

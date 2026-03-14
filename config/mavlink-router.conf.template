@@ -1,0 +1,11 @@
+[General]
+TcpServerPort=${MAVLINK_TCP_PORT}
+
+[UartEndpoint fc]
+Device=${FC_DEVICE}
+Baud=${FC_BAUD}
+
+[UdpEndpoint gcs]
+Mode=Normal
+Address=${GCS_IP}
+Port=${MAVLINK_PORT}

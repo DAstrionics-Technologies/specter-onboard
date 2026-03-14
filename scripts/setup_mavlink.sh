@@ -1,20 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "--- Wifi Setup ---"
-
-# Install hostapd and dnsmasq
-sudo apt install -y hostapd dnsmasq
-
-sudo cp scripts/wifi-start.sh /usr/local/bin/
-sudo chmod +x /usr/local/bin/wifi-start.sh
-sudo cp services/drone-wifi.service /etc/systemd/system/
-sudo cp config/hostapd.conf /etc/hostapd/
-sudo systemctl disable hostapd dnsmasq
-sudo systemctl daemon-reload
-sudo systemctl enable drone-wifi
-
-
 echo "--- Drone Onboard Setup ---"
 
 # Install mavlink-router
@@ -26,11 +12,19 @@ meson setup build . && ninja -C build
 sudo ninja -C build install
 
 # Copy config
+sudo mkdir -p /etc/specter
 sudo mkdir -p /etc/mavlink-router
-sudo cp config/mavlink-router.conf /etc/mavlink-router/main.conf
+
+sudo cp $SCRIPT_DIR/config/mavlink-router.env.template /etc/specter/mavlink-router.env
+source /etc/specter/mavlink-router.env
+
+export GCS_IP MAVLINK_PORT MAVLINK_TCP_PORT FC_DEVICE FC_BAUD
+
+envsubst < $SCRIPT_DIR/config/mavlink-router.conf.template | \
+  sudo tee /etc/mavlink-router/main.conf > /dev/null
 
 # Install systemd service
-sudo cp systemd/mavlink-router.service /etc/systemd/system/mavlink-router.service
+sudo cp $SCRIPT_DIR/systemd/mavlink-router.service /etc/systemd/system/mavlink-router.service
 sudo systemctl daemon-reload
 sudo systemctl enable mavlink-router
 sudo systemctl start mavlink-router

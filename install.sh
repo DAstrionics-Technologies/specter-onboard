@@ -2,8 +2,12 @@
 
 sudo apt update -y
 
-sudo chmod +x scripts/setup_mavlink.sh
-sudo chmod +x scripts/setup_camera.sh
+cd scripts
+sudo chmod +x wifi-start.sh
+sudo chmod +x setup_mavlink.sh
+sudo chmod +x setup_camera.sh
 
-sudo ./scripts/setup_mavlink.sh
-sudo ./scripts/setup_camera.sh
+
+sudo ./wifi-start.sh
+sudo ./setup_mavlink.sh
+sudo ./setup_camera.sh

@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+
 echo "--- Wifi Setup ---"
 
 # Install hostapd and dnsmasq
@@ -26,8 +27,13 @@ meson setup build . && ninja -C build
 sudo ninja -C build install
 
 # Copy config
+sudo cp config/mavlink-router.env /etc/specter/mavlink-router.env
+source /etc/specter/mavlink-router.env
+
 sudo mkdir -p /etc/mavlink-router
-sudo cp config/mavlink-router.conf /etc/mavlink-router/main.conf
+
+envsubst < config/mavlink-router.conf.template \
+  > /etc/mavlink-router/main.conf
 
 # Install systemd service
 sudo cp systemd/mavlink-router.service /etc/systemd/system/mavlink-router.service

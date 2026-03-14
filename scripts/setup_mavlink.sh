@@ -13,7 +13,7 @@ sudo ninja -C build install
 
 # Copy config
 sudo mkdir -p /etc/specter
-sudo cp $SCRIPT_DIR/config/mavlink-router.env /etc/specter/mavlink-router.env
+sudo cp $SCRIPT_DIR/config/mavlink-router.env.template /etc/specter/mavlink-router.env
 source /etc/specter/mavlink-router.env
 
 sudo mkdir -p /etc/mavlink-router

@@ -1,0 +1,22 @@
+interface=${WIFI_INTERFACE}
+driver=nl80211
+
+# Access Point identity
+ssid=${WIFI_SSID}
+utf8_ssid=1
+
+# 5GHz 802.11ac
+hw_mode=a
+channel=${WIFI_CHANNEL}
+ieee80211n=1
+ieee80211ac=1
+
+# WPA2-PSK
+auth_algs=1
+wpa=2
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+wpa_passphrase=${WIFI_PASSWORD}
+
+# Misc
+ignore_broadcast_ssid=0

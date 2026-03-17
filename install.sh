@@ -8,8 +8,8 @@ export SCRIPT_DIR
 echo "--- Running Setup Scripts ---"
 
 # Run them
-sudo bash "$SCRIPT_DIR/scripts/wifi-start.sh"
-sudo bash "$SCRIPT_DIR/scripts/setup_mavlink.sh"
-sudo bash "$SCRIPT_DIR/scripts/setup_camera.sh"
+sudo env SCRIPT_DIR="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/setup_wifi.sh"
+sudo env SCRIPT_DIR="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/setup_mavlink.sh"
+sudo env SCRIPT_DIR="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/setup_camera.sh"
 
 echo "--- Setup Complete ---"

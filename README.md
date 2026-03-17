@@ -6,9 +6,23 @@ Onboard software stack for the Specter drone, running on a Raspberry Pi 4. Handl
 - **Video streaming** — H.265 RTSP relay to GCS via GStreamer
 - **WiFi AP** — 5GHz access point so the GCS can connect to the drone
 
+
+---
+
+## Overview
+
+```
+Flight Controller ──UART──► RPi 4 ──UDP:14550──► GCS (QGroundControl)
+Camera ───────────RTSP──►  (wlan1 AP)──UDP:5600──► GCS video
+                           192.168.10.1
+```
+
+The RPi is the access point — the GCS connects to it. Three systemd services start on boot and restart automatically on crash. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design breakdown.
+
 ---
 
 ## Hardware
+
 
 | Port | Device | Notes |
 |------|--------|-------|

@@ -6,6 +6,17 @@
 - CPU usage while streaming: ?
 - RAM usage while streaming: ?
 
+## 2026-03-17
+- Fixed WiFi AP setup — was broken out of the box on a fresh RPi
+  - Added missing `hostapd.conf.template` and `wifi.env.template`
+  - Split `wifi-start.sh` into `setup_wifi.sh` (one-time install) and `wifi-start.sh` (runtime daemon)
+  - Added `rfkill unblock wifi` to handle soft-blocked radio on RPi OS
+  - Set `DAEMON_CONF` in `/etc/default/hostapd` to unmask hostapd
+  - Fixed `sudo env SCRIPT_DIR=...` bug — `sudo bash` strips exported vars
+- Rewrote README with full sections
+- Tested full install on fresh RPi — AP up, MAVLink routing, video relay all working
+
+
 ## 2026-03-14
 
 **Phase 0-1 essentially complete.**
@@ -22,7 +33,10 @@ Shell only. No Python. Two systemd services + config env files.
 This is the correct approach for this layer.
 
 ### Issues found and fixed
-- [write the bumps you hit and how you fixed them — these are interview stories]
+- `sudo bash` drops exported variables — `SCRIPT_DIR` arrived empty inside setup scripts, breaking all file copy paths. Fixed with `sudo env SCRIPT_DIR=... bash`
+- hostapd ships masked on RPi OS — must set `DAEMON_CONF` in `/etc/default/hostapd` to unmask it
+- wlan1 (USB dongle) takes a few seconds to enumerate after boot — added a 30s polling loop before bringing the interface up
+- setup and runtime logic were mixed in `wifi-start.sh` — systemd restarts re-ran `apt install` on every crash. Separated into `setup_wifi.sh` (one-time) and `wifi-start.sh` (runtime)
 
 ### Known issue
 - Video resolution drops at higher res — encoding disabled (100% CPU spike)
@@ -34,7 +48,6 @@ This is the correct approach for this layer.
 - Video latency: 20ms approx
 
 ### Remaining for v1.0.0
-- WiFi setup script (hostapd + cu2)
 - Health check script
 - README logging section
 

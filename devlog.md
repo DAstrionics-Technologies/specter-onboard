@@ -1,10 +1,10 @@
 ## devlog.md - baseline measurements
 
-- Boot to first heartbeat: ?ms
+- Boot to first heartbeat: 62-65s
 - Mavlink latency: ?ms
-- Video latency (eyeball): ?ms
-- CPU usage while streaming: ?
-- RAM usage while streaming: ?
+- Video latency (eyeball): 30ms
+- CPU usage while streaming: 6-10%
+- RAM usage while streaming: 2-3
 
 ## 2026-03-17
 - Fixed WiFi AP setup — was broken out of the box on a fresh RPi

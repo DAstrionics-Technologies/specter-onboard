@@ -2,14 +2,13 @@
 set -e
 echo "--- WiFi AP Setup ---"
 
-# Install CU2 driver via DKMS
+# Build and install CU2 driver
 DRIVER_DIR="$SCRIPT_DIR/drivers/rtl88x2CU"
 if ! lsmod | grep -q 88x2cu; then
-    sudo apt install -y dkms build-essential linux-headers-$(uname -r)
-    sudo cp -r "$DRIVER_DIR" /usr/src/rtl88x2cu-1.0
-    sudo dkms add rtl88x2cu/1.0
-    sudo dkms build rtl88x2cu/1.0
-    sudo dkms install rtl88x2cu/1.0
+    sudo apt install -y build-essential linux-headers-$(uname -r)
+    sudo make -C "$DRIVER_DIR" clean
+    sudo make -C "$DRIVER_DIR"
+    sudo make -C "$DRIVER_DIR" install
     sudo modprobe 88x2cu
 else
     echo "RTL88x2CU driver already loaded, skipping."

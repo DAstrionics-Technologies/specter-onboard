@@ -16,6 +16,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+*.save
 
 # Build
 build/

@@ -2,10 +2,11 @@
 # Runtime script — called by drone-wifi.service on every boot.
 # Does NOT install packages or copy files; that is setup_wifi.sh's job.
 
-source /etc/specter/wifi.env
+set -e
+source /etc/specter/wifi.env || { echo "ERROR: wifi.env not found" >&2; exit 1; }
 
 IFACE="${WIFI_INTERFACE:-wlan1}"
-AP_IP="192.168.10.1"
+AP_IP="${WIFI_IP}"
 
 echo "--- Starting Drone WiFi AP on $IFACE ---"
 
@@ -40,7 +41,7 @@ sleep 2
 
 # Start dnsmasq bound to the interface
 dnsmasq --interface="$IFACE" --bind-interfaces \
-    --dhcp-range=192.168.10.50,192.168.10.150,255.255.255.0,24h \
+    --dhcp-range=${WIFI_IP_RANGE},255.255.255.0,24h \
     --no-daemon &
 DNSMASQ_PID=$!
 

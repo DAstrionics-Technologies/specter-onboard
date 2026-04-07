@@ -20,9 +20,11 @@ sudo apt install -y hostapd dnsmasq rfkill
 # Disable vendor-managed services (we manage manually via drone-wifi.service)
 sudo systemctl disable hostapd dnsmasq 2>/dev/null || true
 
+sudo mkdir -p /opt/specter/bin
+
 # Stage runtime script
-sudo cp "$SCRIPT_DIR/scripts/wifi-start.sh" /usr/local/bin/wifi-start.sh
-sudo chmod +x /usr/local/bin/wifi-start.sh
+sudo cp "$SCRIPT_DIR/scripts/wifi-start.sh" /opt/specter/bin/wifi-start.sh
+sudo chmod +x /opt/specter/bin/wifi-start.sh
 
 # Stage hostapd config (envsubst from template)
 sudo mkdir -p /etc/hostapd /etc/specter
@@ -38,5 +40,6 @@ echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' | sudo tee /etc/default/hostapd >
 sudo cp "$SCRIPT_DIR/systemd/drone-wifi.service" /etc/systemd/system/drone-wifi.service
 sudo systemctl daemon-reload
 sudo systemctl enable drone-wifi
+sudo systemctl start drone-wifi
 
 echo "--- WiFi AP Setup Complete ---"

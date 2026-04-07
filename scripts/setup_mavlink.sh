@@ -5,11 +5,15 @@ echo "--- Drone Onboard Setup ---"
 
 # Install mavlink-router
 sudo apt install -y git meson ninja-build pkg-config gcc g++ systemd systemd-dev
-git clone https://github.com/mavlink-router/mavlink-router /tmp/mavlink-router
-cd /tmp/mavlink-router
-git submodule update --init --recursive
-meson setup build . && ninja -C build
-sudo ninja -C build install
+if ! command -v mavlink-routerd &>/dev/null; then
+  # build and install
+  git clone https://github.com/mavlink-router/mavlink-router /tmp/mavlink-router
+  cd /tmp/mavlink-router
+  git submodule update --init --recursive
+  meson setup build . && ninja -C build
+  sudo ninja -C build install
+
+fi
 
 # Copy config
 sudo mkdir -p /etc/specter

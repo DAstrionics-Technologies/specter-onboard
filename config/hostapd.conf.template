@@ -8,6 +8,9 @@ utf8_ssid=1
 # 5GHz 802.11ac
 hw_mode=a
 channel=${WIFI_CHANNEL}
+country_code=IN
+ieee80211d=1
+wmm_enabled=1
 ieee80211n=1
 ieee80211ac=1
 

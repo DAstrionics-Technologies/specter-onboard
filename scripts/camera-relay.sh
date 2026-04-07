@@ -1,5 +1,6 @@
 #!/bin/bash
-source /etc/specter/camera-relay.env
+set -e
+source /etc/specter/camera-relay.env || { echo "ERROR: camera-relay.env not found" >&2; exit 1; }
 
 if [ "$ENCODE_VIDEO" = "true" ]; then
   exec gst-launch-1.0 \

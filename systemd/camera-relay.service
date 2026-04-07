@@ -4,7 +4,10 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/opt/da/camera-relay.sh
+Type=exec
+ExecStart=/opt/specter/bin/camera-relay.sh
+StandardOutput=journal
+StandardError=journal
 Restart=always
 RestartSec=5
 

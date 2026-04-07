@@ -14,16 +14,25 @@ if [ "$ENCODE_VIDEO" = "true" ]; then
     udpsink host=${GCS_IP} port=${VIDEO_PORT} sync=false async=false
 else
   if [ "$CLOUD_STREAM" = "true" ]; then
-    exec gst-launch-1.0 \
+    # GCS pipeline (primary — must always work)
+    gst-launch-1.0 \
       rtspsrc location=${VIDEO_URL} latency=${LATENCY} protocols=${PROTOCOLS} drop-on-latency=true ! \
-      rtph265depay ! tee name=t \
-        t. ! queue max-size-buffers=1 leaky=downstream ! \
-          rtph265pay config-interval=${CONFIG_INTERVAL} pt=${PT} mtu=${MTU} aggregate-mode=zero-latency ! \
-          queue max-size-buffers=1 leaky=downstream ! \
-          udpsink host=${GCS_IP} port=${VIDEO_PORT} sync=false async=false \
-        t. ! queue max-size-buffers=1 leaky=downstream ! \
-          h265parse ! \
-          rtspclientsink location=${CLOUD_URL} protocols=tcp latency=0
+      rtph265depay ! \
+      rtph265pay config-interval=${CONFIG_INTERVAL} pt=${PT} mtu=${MTU} aggregate-mode=zero-latency ! \
+      queue max-size-buffers=1 leaky=downstream ! \
+      udpsink host=${GCS_IP} port=${VIDEO_PORT} sync=false async=false &
+    GCS_PID=$!
+
+    # Cloud pipeline (secondary — can fail independently)
+    gst-launch-1.0 \
+      rtspsrc location=${VIDEO_URL} latency=${LATENCY} protocols=${PROTOCOLS} drop-on-latency=true ! \
+      rtph265depay ! h265parse ! \
+      rtspclientsink location=${CLOUD_URL} protocols=tcp latency=0 &
+    CLOUD_PID=$!
+
+    # If GCS dies, kill cloud and exit (systemd restarts both)
+    wait $GCS_PID
+    kill $CLOUD_PID 2>/dev/null || true
   else
     exec gst-launch-1.0 \
       rtspsrc location=${VIDEO_URL} latency=${LATENCY} protocols=${PROTOCOLS} drop-on-latency=true ! \

@@ -1,0 +1,18 @@
+[Unit]
+Description=Specter Telemetry Sender
+After=mavlink-router.service network-online.target
+Wants=network-online.target
+Requires=mavlink-router.service
+
+[Service]
+Type=exec
+EnvironmentFile=/etc/specter/telemetry-sender.env
+WorkingDirectory=/opt/specter
+ExecStart=/opt/specter/.venv/bin/python3 /opt/specter/src/telemetry_sender.py
+StandardOutput=journal
+StandardError=journal
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

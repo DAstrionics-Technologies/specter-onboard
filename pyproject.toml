@@ -1,0 +1,14 @@
+[project]
+name = "specter-onboard"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.14"
+dependencies = [
+    "httpx>=0.28.1",
+    "pymavlink>=2.4.49",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]

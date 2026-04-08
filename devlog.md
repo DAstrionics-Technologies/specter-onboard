@@ -6,6 +6,42 @@
 - CPU usage while streaming: 6-10%
 - RAM usage while streaming: 2-3
 
+## 2026-04-08
+- Built telemetry sender — Python script that reads MAVLink from mavlink-router (TCP :5760), accumulates state, POSTs to specter-cloud at 1Hz
+  - Accumulator pattern: HEARTBEAT, GLOBAL_POSITION_INT, SYS_STATUS, VFR_HUD, GPS_RAW_INT → single payload
+  - Requests data streams itself via `request_data_stream_send` — works independently of QGC
+  - Error handling: network/timeout failures don't crash the MAVLink loop, logs recovery after cloud reconnect
+  - Event-driven logging: armed/disarmed transitions, flight mode changes, GPS fix acquired, cloud connection lost/restored
+  - Used `logging` stdlib (not structlog) — appropriate for single-purpose onboard script, maps to journald priorities
+- Switched to uv for Python dependency management
+  - `pyproject.toml` + `uv.lock` for reproducible installs across fleet
+  - `uv sync --no-dev` on RPi, `uv run pytest` for dev
+- Created systemd service for telemetry sender
+  - `Requires=mavlink-router.service` — stops if mavlink-router dies, restarts when it comes back
+  - `EnvironmentFile=/etc/specter/telemetry-sender.env` — config without shell wrapper
+- Added unit tests for update_state (MAVLink conversions) and build_payload
+  - FakeMsg pattern instead of pymavlink mocks — tests the logic, not the library
+  - Skipped HEARTBEAT flight mode test — depends on pymavlink internals (mode_string_v10)
+- Cloud video relay working end-to-end
+  - Separate GStreamer pipeline for cloud (RTSP push via rtspclientsink to mediamtx)
+  - Independent of GCS pipeline — cloud failure doesn't kill GCS video
+  - Camera needs static IP on eth0 (192.168.144.1) via NetworkManager
+- Updated README with telemetry sender, cloud streaming, uv setup, dev section
+
+### Issues found and fixed
+- `heading` double conversion — `math.degrees(msg.hdg / 100)` was converting degrees→degrees. Fix: just `msg.hdg / 100`
+- ATTITUDE values divided by 1e7 — they're already radians as floats, not scaled ints
+- `recv_match(type=[...])` whitelist was missing VFR_HUD and GPS_RAW_INT — those messages silently dropped
+- `request_data_stream_send` before `wait_heartbeat` — target_system is 0 until heartbeat arrives
+- `SEND_INTERVAL` from env was string, compared with `>=` against float — wrapped in `int()`
+- KeyError on first send — state dict had no defaults, first POST fired before any messages arrived
+- `async def send()` called without await from sync `run()` — coroutine never executed. Fix: keep everything sync
+
+### Metrics
+- Telemetry sender CPU: ~1% (pymavlink + httpx at 1Hz)
+- Cloud video relay CPU: ~6% (separate GStreamer pipeline)
+- End-to-end telemetry latency: <1s (MAVLink → RPi → cloud API → DB)
+
 ## 2026-03-17
 - Fixed WiFi AP setup — was broken out of the box on a fresh RPi
   - Added missing `hostapd.conf.template` and `wifi.env.template`

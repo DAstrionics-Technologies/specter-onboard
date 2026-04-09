@@ -11,5 +11,6 @@ echo "--- Running Setup Scripts ---"
 sudo env SCRIPT_DIR="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/setup_wifi.sh"
 sudo env SCRIPT_DIR="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/setup_mavlink.sh"
 sudo env SCRIPT_DIR="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/setup_camera.sh"
+sudo env SCRIPT_DIR="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/setup_telemetry.sh"
 
 echo "--- Setup Complete ---"

@@ -24,10 +24,14 @@ else
     GCS_PID=$!
 
     # Cloud pipeline (secondary — can fail independently)
-    gst-launch-1.0 \
-      rtspsrc location=${VIDEO_URL} latency=${LATENCY} protocols=${PROTOCOLS} drop-on-latency=true ! \
-      rtph265depay ! h265parse ! \
-      rtspclientsink location=${CLOUD_URL} protocols=tcp latency=0 &
+    while true; do
+      gst-launch-1.0 \
+        rtspsrc location=${VIDEO_URL} latency=${LATENCY} protocols=${PROTOCOLS} drop-on-latency=true ! \
+        rtph265depay ! h265parse ! \
+        rtspclientsink location=${CLOUD_URL} protocols=tcp latency=0
+      echo "Cloud pipeline exited, retrying in 5s..."
+      sleep 5
+    done &
     CLOUD_PID=$!
 
     # If GCS dies, kill cloud and exit (systemd restarts both)

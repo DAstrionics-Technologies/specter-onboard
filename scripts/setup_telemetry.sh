@@ -3,20 +3,20 @@ set -e
 
 echo "---Installing Telemetry Sender---"
 
-# Install uv if not present
+# Install uv system-wide if not present
 if ! command -v uv &>/dev/null; then
   curl -LsSf https://astral.sh/uv/install.sh | sh
-  export PATH="$HOME/.local/bin:$PATH"
+  sudo mv /root/.local/bin/uv /usr/local/bin/uv
 fi
 
-# Create project directory and sync dependencies from lockfile
+# Copy project files to /opt/specter/
 sudo mkdir -p /opt/specter/src
 sudo cp $SCRIPT_DIR/pyproject.toml /opt/specter/pyproject.toml
 sudo cp $SCRIPT_DIR/uv.lock /opt/specter/uv.lock
-cd /opt/specter && sudo uv sync --no-dev
-
-# Copy script
 sudo cp $SCRIPT_DIR/src/telemetry_sender.py /opt/specter/src/telemetry_sender.py
+
+# Sync dependencies from lockfile
+cd /opt/specter && sudo uv sync --no-dev
 
 # Copy env config
 sudo mkdir -p /etc/specter

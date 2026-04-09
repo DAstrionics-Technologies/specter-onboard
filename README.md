@@ -1,10 +1,11 @@
 # Project Specter — Onboard
 
-Onboard software stack for the Specter drone, running on a Raspberry Pi 4. Handles four jobs:
+Onboard software stack for the Specter drone, running on a Raspberry Pi 4. Handles five jobs:
 
 - **MAVLink routing** — bidirectional FC ↔ GCS telemetry over UDP
 - **Video streaming** — H.265 RTSP relay to GCS via GStreamer, optional cloud relay via RTSP to mediamtx
 - **Telemetry sender** — reads MAVLink, POSTs to specter-cloud at 1Hz
+- **Cellular uplink** — Quectel EC25 LTE modem for cloud connectivity
 - **WiFi AP** — 5GHz access point so the GCS can connect to the drone
 
 
@@ -31,6 +32,7 @@ The RPi is the access point — the GCS connects to it. Three systemd services s
 |------|--------|-------|
 | UART `/dev/ttyAMA0` or USB | Flight Controller | TX→RX, RX→TX, GND |
 | USB (`wlan1`) | BL-M8812CU2 WiFi Module | 5GHz air-ground link |
+| USB (`wwan0`) | Quectel EC25 LTE Modem | Cellular uplink to cloud |
 | CSI / USB / Ethernet | Camera | RTSP source |
 | 5V / 3A | Power | BEC from drone power system |
 
@@ -81,6 +83,7 @@ Edit the config templates before running install:
 | `config/wifi.env.template` | AP SSID, password, channel, interface |
 | `config/mavlink-router.env.template` | GCS IP, MAVLink ports, FC device + baud |
 | `config/camera-relay.env.template` | Camera RTSP URL, GCS IP, video port, cloud streaming |
+| `config/cellular.env.template` | APN, SIM PIN, connection name |
 | `config/telemetry-sender.env.template` | MAVLink source, cloud ingest URL, drone ID |
 
 ### 4. Install
@@ -89,14 +92,15 @@ Edit the config templates before running install:
 chmod +x install.sh && ./install.sh
 ```
 
-This runs three setup scripts in order:
+This runs five setup scripts in order:
 
 1. `setup_wifi.sh` — installs hostapd/dnsmasq, generates `hostapd.conf`, enables `drone-wifi.service`
 2. `setup_mavlink.sh` — builds mavlink-router from source, enables `mavlink-router.service`
 3. `setup_camera.sh` — installs GStreamer, deploys camera relay, enables `camera-relay.service`
-4. `setup_telemetry.sh` — installs Python deps via uv, deploys telemetry sender, enables `telemetry-sender.service`
+4. `setup_cellular.sh` — configures Quectel EC25 LTE modem via NetworkManager, auto-connects on boot
+5. `setup_telemetry.sh` — installs Python deps via uv, deploys telemetry sender, enables `telemetry-sender.service`
 
-On next boot, all three services start automatically.
+On next boot, all services start automatically.
 
 ---
 
@@ -121,9 +125,13 @@ Drone (RPi AP)                         GCS
               MAVLink UDP :14550
               MAVLink TCP :5760
               Video   UDP :5600
+
+Drone (RPi LTE)                        Cloud (specter-cloud)
+wwan0         ──── Cellular ────→  cloud-ip:8000 (telemetry API)
+                                   cloud-ip:8554 (mediamtx RTSP)
 ```
 
-DHCP serves `192.168.10.50–150`. The GCS is expected at `.110` (set in env templates).
+DHCP serves `192.168.10.50–150` on the WiFi AP. The GCS is expected at `.110` (set in env templates). Cloud connectivity uses the LTE modem (`wwan0`) via NetworkManager.
 
 ---
 
@@ -160,6 +168,13 @@ CLOUD_STREAM=false   # set true to relay video to cloud
 CLOUD_URL=rtsp://cloud-ip:8554/live/drone-1
 ```
 
+### `config/cellular.env.template`
+```ini
+APN=jionet
+SIM_PIN=
+CON_NAME=cellular
+```
+
 ### `config/telemetry-sender.env.template`
 ```ini
 MAVLINK_SOURCE=tcp:127.0.0.1:5760
@@ -183,12 +198,14 @@ specter-onboard/
 │   ├── mavlink-router.env.template
 │   ├── mavlink-router.conf.template
 │   ├── camera-relay.env.template
+│   ├── cellular.env.template
 │   └── telemetry-sender.env.template
 ├── scripts/
 │   ├── setup_wifi.sh       # One-time WiFi AP setup
 │   ├── wifi-start.sh       # Runtime AP daemon (called by systemd)
 │   ├── setup_mavlink.sh    # One-time mavlink-router build + setup
 │   ├── setup_camera.sh     # One-time GStreamer + camera-relay setup
+│   ├── setup_cellular.sh   # One-time LTE modem setup via NetworkManager
 │   ├── setup_telemetry.sh  # One-time telemetry sender setup (uv + systemd)
 │   └── camera-relay.sh     # Runtime GStreamer pipeline (called by systemd)
 ├── systemd/                # Service unit files
@@ -227,6 +244,6 @@ uv run python src/telemetry_sender.py
 - [x] Video streaming to GCS (GStreamer)
 - [x] Cloud video relay (RTSP → mediamtx)
 - [x] Telemetry sender (MAVLink → specter-cloud)
+- [x] Cellular uplink (Quectel EC25 LTE via NetworkManager)
 - [ ] Link Manager — auto-failover between 5GHz WiFi → LoRa → 5G/LTE
 - [ ] LoRa fallback link (Phase 3)
-- [ ] 5G/LTE link (Phase 4)

@@ -23,8 +23,8 @@ class TelemetrySender:
         self.conn = None
         self.client = httpx.Client(timeout=5)
         self.state = {
-            "lat": 0.0,
-            "lon": 0.0,
+            "lat": None,          # None until first valid GPS fix — prevents Null Island
+            "lon": None,
             "alt": 0.0,
             "speed": 0.0,
             "heading": 0,
@@ -37,6 +37,7 @@ class TelemetrySender:
         }
         self.fail_count = 0
         self.last_send = 0
+        self.seen_sysids = set()  # for first-time heartbeat source logging
 
     def connect(self):
         """Connect to mavlink-router and wait for first heartbeat."""
@@ -54,11 +55,29 @@ class TelemetrySender:
         log.info(f"Heartbeat received from system {self.conn.target_system}")
 
     def update_state(self, msg):
+        # Log first heartbeat seen from each source sysid for debugging
+        if msg.get_type() == "HEARTBEAT":
+            src = msg.get_srcSystem()
+            if src not in self.seen_sysids:
+                self.seen_sysids.add(src)
+                log.info(f"Saw heartbeat from sysid={src} (FC sysid={self.conn.target_system})")
+
+        # Only process messages from the flight controller — mavlink-router
+        # relays heartbeats from every node on the bus (GCS, companion, etc),
+        # which would cause armed/flight_mode to flip between real FC values
+        # and zeroed values from non-autopilot sources.
+        if msg.get_srcSystem() != self.conn.target_system:
+            return
 
         match msg.get_type():
             case "GLOBAL_POSITION_INT":
-                self.state['lat'] = msg.lat / 1e7
-                self.state['lon'] = msg.lon / 1e7
+                lat = round(msg.lat / 1e7, 6)
+                lon = round(msg.lon / 1e7, 6)
+                # Ignore (0,0) — FC sends these before GPS lock.
+                # Once we have a real position, keep it sticky across packet loss.
+                if lat != 0.0 and lon != 0.0:
+                    self.state['lat'] = lat
+                    self.state['lon'] = lon
                 self.state['alt'] = msg.relative_alt / 1000
                 self.state['heading'] = msg.hdg / 100
 
@@ -128,11 +147,12 @@ class TelemetrySender:
             self.fail_count += 1
             log.error(f"Send Failed: {type(e).__name__}")
         
-        if self.fail_count >= 30:
+        if self.fail_count == 30:
             log.error("Cloud connection lost")
 
     def run(self):
         self.connect()
+        waiting_for_fix_logged = False
         while True:
             msg = self.conn.recv_match(blocking=True)
             if msg:
@@ -141,7 +161,23 @@ class TelemetrySender:
             now = time.time()
 
             if now - self.last_send >= SEND_INTERVAL:
-                self.send(self.build_payload())
+                # Don't send telemetry until we have a real GPS position.
+                # Prevents the dashboard from rendering Null Island (0,0) at startup.
+                if self.state['lat'] is None or self.state['lon'] is None:
+                    if not waiting_for_fix_logged:
+                        log.info("Waiting for first GPS position before sending telemetry...")
+                        waiting_for_fix_logged = True
+                    self.last_send = now
+                    continue
+
+                payload = self.build_payload()
+                log.info(
+                    f"TX lat={payload['lat']:.6f} lon={payload['lon']:.6f} "
+                    f"alt={payload['alt']:.1f} armed={payload['armed']} "
+                    f"mode={payload['flight_mode']} fix={payload['gps_fix_type']} "
+                    f"sats={payload['satellites']}"
+                )
+                self.send(payload)
                 self.last_send = now
 
 

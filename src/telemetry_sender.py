@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import math
 import httpx
@@ -15,28 +16,40 @@ log = logging.getLogger("telemetry-sender")
 MAVLINK_SOURCE = os.environ.get("MAVLINK_SOURCE", "COM5")
 CLOUD_INGEST_URL = os.environ.get("CLOUD_INGEST_URL", "http://localhost:8000/api/v1/ingest/telemetry")
 DRONE_ID = os.environ.get("DRONE_ID", "drone-1")
+DRONE_API_KEY = os.environ.get("DRONE_API_KEY")
 SEND_INTERVAL = int(os.environ.get("SEND_INTERVAL", 1))
+
+if not DRONE_API_KEY:
+    log.error("DRONE_API_KEY not set; refusing to start. Set it in /etc/specter/telemetry-sender.env and restart.")
+    sys.exit(1)
+
+AUTH_BACKOFF_CAP_SECONDS = 60
 
 
 class TelemetrySender:
     def __init__(self):
         self.conn = None
-        self.client = httpx.Client(timeout=5)
+        self.client = httpx.Client(timeout=5, headers={"X-API-Key": DRONE_API_KEY})
+        # Dev override: set BYPASS_GPS_GATE=1 to start sending immediately with
+        # dummy coords. Production keeps the None-until-fix invariant.
+        bypass = os.environ.get("BYPASS_GPS_GATE") == "1"
         self.state = {
-            "lat": None,          # None until first valid GPS fix — prevents Null Island
-            "lon": None,
+            "lat": 28.6139 if bypass else None,
+            "lon": 77.2090 if bypass else None,
             "alt": 0.0,
             "speed": 0.0,
             "heading": 0,
-            "battery": 0.0,
+            "battery": 0.1,
             "voltage": 0.0,
             "armed": False,
             "flight_mode": "UNKNOWN",
             "gps_fix_type": 0,
             "satellites": 0,
         }
-        self.fail_count = 0
+        self.fail_count = 0          # transport / 5xx — network-shaped failures
+        self.auth_fail_count = 0     # 401 — auth-shaped failures, distinct signal
         self.last_send = 0
+        self.next_send_after = 0     # honored during auth backoff
         self.seen_sysids = set()  # for first-time heartbeat source logging
 
     def connect(self):
@@ -93,8 +106,14 @@ class TelemetrySender:
                 self.state['flight_mode'] = new_mode
             
             case "SYS_STATUS":
-                self.state['battery'] = msg.battery_remaining
-                self.state['voltage'] = msg.voltage_battery / 1000
+                # MAVLink sentinels for "field not provided":
+                #   battery_remaining = -1, voltage_battery = UINT16_MAX (65535).
+                # Skip the assignment so state stays at last-known (or 0.0
+                # initial) instead of propagating sentinel values to cloud.
+                if msg.battery_remaining >= 0:
+                    self.state['battery'] = msg.battery_remaining
+                if msg.voltage_battery != 65535:
+                    self.state['voltage'] = msg.voltage_battery / 1000
 
             case "ATTITUDE":
                 self.state['roll'] = math.degrees(msg.roll)
@@ -113,7 +132,6 @@ class TelemetrySender:
 
     def build_payload(self):
         payload = {
-            "drone_id": DRONE_ID,
             "lat": self.state['lat'],
             "lon": self.state['lon'],
             "alt": self.state['alt'],
@@ -133,11 +151,20 @@ class TelemetrySender:
         try:
             response = self.client.post(CLOUD_INGEST_URL, json=payload)
             if response.status_code == 200:
-                if self.fail_count == 0 and self.last_send == 0:
+                if self.fail_count == 0 and self.auth_fail_count == 0 and self.last_send == 0:
                     log.info("First telemetry sent successfully")
                 elif self.fail_count > 0:
                     log.info(f"Cloud connection restored after {self.fail_count} failures")
+                elif self.auth_fail_count > 0:
+                    log.info(f"Auth restored after {self.auth_fail_count} rejections")
                 self.fail_count = 0
+                self.auth_fail_count = 0
+                self.next_send_after = 0
+            elif response.status_code == 401:
+                self.auth_fail_count += 1
+                backoff = min(AUTH_BACKOFF_CAP_SECONDS, 2 ** (self.auth_fail_count - 1))
+                self.next_send_after = time.time() + backoff
+                log.error(f"Auth rejected (401); backing off {backoff}s. Check DRONE_API_KEY.")
             elif response.status_code < 500:
                 log.error(f"Client error: {response.status_code}: {response.text}")
             else:
@@ -146,7 +173,7 @@ class TelemetrySender:
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as e:
             self.fail_count += 1
             log.error(f"Send Failed: {type(e).__name__}")
-        
+
         if self.fail_count == 30:
             log.error("Cloud connection lost")
 
@@ -160,7 +187,7 @@ class TelemetrySender:
 
             now = time.time()
 
-            if now - self.last_send >= SEND_INTERVAL:
+            if now - self.last_send >= SEND_INTERVAL and now >= self.next_send_after:
                 # Don't send telemetry until we have a real GPS position.
                 # Prevents the dashboard from rendering Null Island (0,0) at startup.
                 if self.state['lat'] is None or self.state['lon'] is None:

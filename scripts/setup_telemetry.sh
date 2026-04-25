@@ -18,16 +18,26 @@ sudo cp $SCRIPT_DIR/src/telemetry_sender.py /opt/specter/src/telemetry_sender.py
 # Sync dependencies from lockfile
 cd /opt/specter && sudo uv sync --no-dev
 
-# Copy env config
+# Copy env config (env file holds DRONE_API_KEY, lock it down to root)
 sudo mkdir -p /etc/specter
 sudo cp $SCRIPT_DIR/config/telemetry-sender.env.template /etc/specter/telemetry-sender.env
+sudo chown root:root /etc/specter/telemetry-sender.env
+sudo chmod 600 /etc/specter/telemetry-sender.env
 
 # Install systemd service
 sudo cp $SCRIPT_DIR/systemd/telemetry-sender.service /etc/systemd/system/telemetry-sender.service
 
 sudo systemctl daemon-reload
 sudo systemctl enable telemetry-sender
-sudo systemctl start telemetry-sender
 
-echo "---Telemetry Sender Started---"
-sudo systemctl status telemetry-sender
+# Don't auto-start if DRONE_API_KEY is unset — service would just flap.
+if sudo grep -q "^DRONE_API_KEY=$" /etc/specter/telemetry-sender.env; then
+    echo ""
+    echo "DRONE_API_KEY is empty in /etc/specter/telemetry-sender.env"
+    echo "Mint a key on the cloud (scripts/mint_key.py) and add it to the file."
+    echo "Then start the service: sudo systemctl start telemetry-sender"
+else
+    sudo systemctl start telemetry-sender
+    echo "---Telemetry Sender Started---"
+    sudo systemctl status telemetry-sender
+fi

@@ -84,7 +84,7 @@ Edit the config templates before running install:
 | `config/mavlink-router.env.template` | GCS IP, MAVLink ports, FC device + baud |
 | `config/camera-relay.env.template` | Camera RTSP URL, GCS IP, video port, cloud streaming |
 | `config/cellular.env.template` | APN, SIM PIN, connection name |
-| `config/telemetry-sender.env.template` | MAVLink source, cloud ingest URL, drone ID |
+| `config/telemetry-sender.env.template` | MAVLink source, cloud ingest URL, drone ID, **DRONE_API_KEY** (mint via specter-cloud's `scripts/mint_key.py`) |
 
 ### 4. Install
 
@@ -180,8 +180,24 @@ CON_NAME=cellular
 MAVLINK_SOURCE=tcp:127.0.0.1:5760
 CLOUD_INGEST_URL=http://cloud-ip:8000/api/v1/ingest/telemetry
 DRONE_ID=drone-1
+DRONE_API_KEY=
 SEND_INTERVAL=1
 ```
+
+`DRONE_API_KEY` must be filled in before `telemetry-sender.service` will start —
+the process refuses to launch if it's empty. Mint a key on specter-cloud:
+
+```bash
+uv run python -m scripts.mint_key --org-slug <org> --drone-slug <drone> --label "<label>"
+```
+
+The key is shown once on stdout; copy it into `/etc/specter/telemetry-sender.env`.
+The env file is `chmod 600 root:root` (set by `setup_telemetry.sh`). On 401
+responses, the sender backs off with capped exponential delay (1s → 60s) and
+keeps retrying — operator can re-key via Tailscale SSH without restarting.
+
+For dev rigs without a GPS lock, set `BYPASS_GPS_GATE=1` to start sending with
+seeded coordinates (Delhi, 28.6139/77.2090) instead of waiting for a fix.
 
 ---
 

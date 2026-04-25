@@ -1,3 +1,13 @@
+## 2026-04-25 — API key auth client + MAVLink sentinel handling
+
+- Wired `DRONE_API_KEY` into telemetry sender. Set as default `X-API-Key` header on the `httpx.Client` so every POST carries it automatically.
+- Fail-loud at startup if `DRONE_API_KEY` is unset — `sys.exit(1)` so systemd's restart loop becomes the visible signal. A misconfigured drone should not silently 401-spam the cloud.
+- 401 handling: separate `auth_fail_count` from the existing transport `fail_count`. Different root causes deserve different signals — auth failures don't trigger "Cloud connection lost" anymore.
+- Capped exponential backoff on 401 (`1s, 2s, 4s, ..., 60s` cap). Avoids 1Hz log spam during a revoked-key scenario. Drone keeps retrying forever; on first 200 response, counters and backoff window reset and normal cadence resumes.
+- `BYPASS_GPS_GATE=1` env override seeds dummy coords for dev rigs without a GPS lock. Production behavior unchanged.
+- MAVLink sentinel translation in `update_state` for `SYS_STATUS`: skip the assignment when `battery_remaining == -1` or `voltage_battery == 65535` (UINT16_MAX). Both are "field not provided" sentinels per the spec; without filtering, a bare FC's first packet would propagate `-1%` battery and `65.5V` voltage to the cloud and 422.
+- Setup script: `chmod 600 root:root` on the env file (now contains a secret). Setup script no longer auto-starts `telemetry-sender.service` if `DRONE_API_KEY` is empty — prevents a guaranteed flap.
+
 ## devlog.md - baseline measurements
 
 - Boot to first heartbeat: 62-65s

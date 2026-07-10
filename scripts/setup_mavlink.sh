@@ -3,16 +3,13 @@ set -e
 
 echo "--- Drone Onboard Setup ---"
 
-# Install mavlink-router
-sudo apt install -y git meson ninja-build pkg-config gcc g++ systemd systemd-dev
-if ! command -v mavlink-routerd &>/dev/null; then
-  # build and install
-  git clone https://github.com/mavlink-router/mavlink-router /tmp/mavlink-router
-  cd /tmp/mavlink-router
-  git submodule update --init --recursive
-  meson setup build . && ninja -C build
-  sudo ninja -C build install
-
+# Install mavlink-router: prefer the committed prebuilt binary; build only as fallback.
+if [ -x "$SCRIPT_DIR/bin/mavlink-routerd" ]; then
+  echo "Installing prebuilt mavlink-routerd..."
+  sudo install -m 755 "$SCRIPT_DIR/bin/mavlink-routerd" /usr/bin/mavlink-routerd
+elif ! command -v mavlink-routerd &>/dev/null; then
+  echo "No prebuilt binary found — building from source (slow on low-RAM boards)..."
+  bash "$SCRIPT_DIR/scripts/build_mavlink_router.sh" --install
 fi
 
 # Copy config
@@ -31,8 +28,7 @@ envsubst < $SCRIPT_DIR/config/mavlink-router.conf.template | \
 sudo cp $SCRIPT_DIR/systemd/mavlink-router.service /etc/systemd/system/mavlink-router.service
 sudo systemctl daemon-reload
 sudo systemctl enable mavlink-router
-sudo systemctl start mavlink-router
+sudo systemctl start mavlink-router || true
 
 echo "--- Setup Complete ---"
-echo "mavlink-router status:"
-sudo systemctl status mavlink-router
+echo "mavlink-router: $(systemctl is-active mavlink-router)"

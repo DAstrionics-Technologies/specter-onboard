@@ -1,0 +1,7 @@
+version:  v4-15-g51983a4
+arch:     aarch64 (ARMv8-A) — runs on Zero 2 W (A53) / Pi 4 (A72) / Pi 5 (A76)
+libc:     Debian 13 (trixie) glibc, dynamically linked
+source:   extracted from Pi 4B /usr/bin/mavlink-routerd, then stripped
+sha256:   a58239bb649516192a5713be50b4959b62912dbaf5edc9ad8b83e1e93d7bc2c8
+
+# Refresh with scripts/build_mavlink_router.sh (memory-safe, records a fresh version here).

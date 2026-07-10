@@ -37,7 +37,6 @@ if sudo grep -q "^DRONE_API_KEY=$" /etc/specter/telemetry-sender.env; then
     echo "Mint a key on the cloud (scripts/mint_key.py) and add it to the file."
     echo "Then start the service: sudo systemctl start telemetry-sender"
 else
-    sudo systemctl start telemetry-sender
-    echo "---Telemetry Sender Started---"
-    sudo systemctl status telemetry-sender
+    sudo systemctl start telemetry-sender || true
+    echo "telemetry-sender: $(systemctl is-active telemetry-sender)"
 fi

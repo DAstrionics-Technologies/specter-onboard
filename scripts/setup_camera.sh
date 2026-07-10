@@ -24,7 +24,7 @@ sudo cp $SCRIPT_DIR/config/camera-relay.env.template /etc/specter/camera-relay.e
 # Set static IP for camera Ethernet interface
 if ! nmcli con show camera &>/dev/null; then
   nmcli con add type ethernet con-name camera ifname eth0 \
-    ipv4.addresses 192.168.144.1/24 ipv4.method manual
+    ipv4.addresses 192.168.144.1/24 ipv4.method manual || true
 fi
 
 # Create a systemd service
@@ -32,7 +32,7 @@ sudo cp $SCRIPT_DIR/systemd/camera-relay.service /etc/systemd/system/camera-rela
 
 sudo systemctl daemon-reload
 sudo systemctl enable camera-relay
-sudo systemctl start camera-relay
+sudo systemctl start camera-relay || true
 
 echo "---Camera Stream Daemon Started---"
-sudo systemctl status camera-relay
+echo "camera-relay: $(systemctl is-active camera-relay)"

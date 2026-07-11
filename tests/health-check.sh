@@ -12,6 +12,7 @@ NC='\033[0m'
 
 ok()   { echo -e "  ${GREEN}✔${NC}  $1"; ((PASS++)); }
 fail() { echo -e "  ${RED}✗${NC}  $1"; ((FAIL++)); }
+# shellcheck disable=SC2317  # helper kept for future checks; not called yet
 info() { echo -e "  ${YELLOW}i${NC}  $1"; }
 
 echo ""
@@ -92,7 +93,6 @@ echo "── Camera ──"
 
 CAM_ENV="/etc/specter/camera-relay.env"
 VIDEO_URL="rtsp://192.168.144.25:8554/main.264"
-VIDEO_PORT=5600
 
 [ -f "$CAM_ENV" ] && source "$CAM_ENV"
 

@@ -88,19 +88,32 @@ Edit the config templates before running install:
 
 ### 4. Install
 
+Choose a **profile** matching this drone's hardware — only its modules install:
+
 ```bash
-chmod +x install.sh && ./install.sh
+chmod +x install.sh
+./install.sh --profile scout            # wifi + mavlink + telemetry
+./install.sh --profile full             # all five modules
+./install.sh --profile bench            # wifi + mavlink only (bench testing)
+./install.sh --profile scout --dry-run  # preview selection without installing
 ```
 
-This runs five setup scripts in order:
+Profiles live in `profiles/*.conf` — edit them or add your own. Modules run in a
+fixed canonical order and install independently: a module whose hardware isn't
+connected still installs and enables its service, which then starts
+automatically once the hardware appears. A failing module never aborts the
+others — the run ends with a summary and records the chosen profile to
+`/etc/specter/installed-profile` (used later by `update.sh`).
 
-1. `setup_wifi.sh` — installs hostapd/dnsmasq, generates `hostapd.conf`, enables `drone-wifi.service`
-2. `setup_mavlink.sh` — builds mavlink-router from source, enables `mavlink-router.service`
-3. `setup_camera.sh` — installs GStreamer, deploys camera relay, enables `camera-relay.service`
-4. `setup_cellular.sh` — configures Quectel EC25 LTE modem via NetworkManager, auto-connects on boot
-5. `setup_telemetry.sh` — installs Python deps via uv, deploys telemetry sender, enables `telemetry-sender.service`
+Available modules:
 
-On next boot, all services start automatically.
+1. `wifi` — installs hostapd/dnsmasq, generates `hostapd.conf`, enables `drone-wifi.service`
+2. `mavlink` — installs the prebuilt `mavlink-routerd` binary from `bin/` (no on-target compile), enables `mavlink-router.service`
+3. `camera` — installs GStreamer, deploys camera relay, enables `camera-relay.service`
+4. `cellular` — configures Quectel EC25 LTE modem via NetworkManager, auto-connects on boot
+5. `telemetry` — installs Python deps via uv, deploys telemetry sender, enables `telemetry-sender.service`
+
+On next boot, all installed services start automatically.
 
 ---
 

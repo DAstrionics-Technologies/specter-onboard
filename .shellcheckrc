@@ -1,0 +1,4 @@
+# Runtime config lives in /etc/specter/*.env, generated at install time — those
+# files don't exist in the repo, so shellcheck can't follow `source` into them.
+# This is the intended config-at-install pattern, not a bug.
+disable=SC1091,SC1090

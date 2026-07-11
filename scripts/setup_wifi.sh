@@ -4,14 +4,14 @@ echo "--- WiFi AP Setup ---"
 
 # Build and install CU2 driver
 DRIVER_DIR="$SCRIPT_DIR/drivers/rtl88x2CU"
-if ! lsmod | grep -q 88x2cu; then
-    sudo apt install -y build-essential linux-headers-$(uname -r)
+if ! iw list | grep -q '\* AP'; then
+    sudo apt install -y build-essential linux-headers-"$(uname -r)"
     sudo make -C "$DRIVER_DIR" clean
     sudo make -C "$DRIVER_DIR"
     sudo make -C "$DRIVER_DIR" install
     sudo modprobe 88x2cu
 else
-    echo "RTL88x2CU driver already loaded, skipping."
+    echo "AP-capable driver already present, skipping build."
 fi
 
 # Install dependencies
@@ -40,6 +40,7 @@ echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' | sudo tee /etc/default/hostapd >
 sudo cp "$SCRIPT_DIR/systemd/drone-wifi.service" /etc/systemd/system/drone-wifi.service
 sudo systemctl daemon-reload
 sudo systemctl enable drone-wifi
-sudo systemctl start drone-wifi
+sudo systemctl start drone-wifi || true
+echo "drone-wifi: $(systemctl is-active drone-wifi)"
 
 echo "--- WiFi AP Setup Complete ---"

@@ -5,7 +5,7 @@ echo "--- WiFi AP Setup ---"
 # Build and install CU2 driver
 DRIVER_DIR="$SCRIPT_DIR/drivers/rtl88x2CU"
 if ! iw list | grep -q '\* AP'; then
-    sudo apt install -y build-essential linux-headers-$(uname -r)
+    sudo apt install -y build-essential linux-headers-"$(uname -r)"
     sudo make -C "$DRIVER_DIR" clean
     sudo make -C "$DRIVER_DIR"
     sudo make -C "$DRIVER_DIR" install

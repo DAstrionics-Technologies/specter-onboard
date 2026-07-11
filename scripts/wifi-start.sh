@@ -41,7 +41,7 @@ sleep 2
 
 # Start dnsmasq bound to the interface
 dnsmasq --interface="$IFACE" --bind-interfaces \
-    --dhcp-range=${WIFI_IP_RANGE},255.255.255.0,24h \
+    --dhcp-range="${WIFI_IP_RANGE}",255.255.255.0,24h \
     --no-daemon &
 DNSMASQ_PID=$!
 

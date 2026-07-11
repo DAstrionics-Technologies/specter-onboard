@@ -8,7 +8,7 @@ sudo apt install -y modemmanager
 
 # Copy env config
 sudo mkdir -p /etc/specter
-sudo cp $SCRIPT_DIR/config/cellular.env.template /etc/specter/cellular.env
+sudo cp "$SCRIPT_DIR"/config/cellular.env.template /etc/specter/cellular.env
 source /etc/specter/cellular.env
 
 # Unlock SIM if PIN is set (non-fatal — no modem yet is OK)

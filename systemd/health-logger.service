@@ -1,0 +1,11 @@
+[Unit]
+Description=Specter Health & Link Logger
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/specter/bin/health-logger.sh
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

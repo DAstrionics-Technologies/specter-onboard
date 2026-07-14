@@ -33,6 +33,10 @@ want_in "scout ordered wifi mavlink telemetry" \
   "modules (canonical order): wifi mavlink telemetry" \
   "$(bash "$INSTALL" --profile scout --dry-run)"
 
+want_in "range-test selects wifi+health" \
+  "modules (canonical order): wifi health" \
+  "$(bash "$INSTALL" --profile range-test --dry-run)"
+
 # Canonical ordering must not depend on file order.
 tmp="$(mktemp -d)"
 printf 'telemetry\nwifi\nmavlink\n' > "$tmp/reversed.conf"

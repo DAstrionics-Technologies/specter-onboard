@@ -5,13 +5,14 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROFILES_DIR="${SPECTER_PROFILES_DIR:-$SCRIPT_DIR/profiles}"
 
-CANONICAL_MODULES=(wifi mavlink camera cellular telemetry)
+CANONICAL_MODULES=(wifi mavlink camera cellular telemetry health)
 declare -A MODULE_SERVICE=(
   [wifi]="drone-wifi"
   [mavlink]="mavlink-router"
   [camera]="camera-relay"
   [cellular]=""
   [telemetry]="telemetry-sender"
+  [health]="health-logger"
 )
 
 DRY_RUN=0

@@ -1,6 +1,18 @@
 #!/bin/bash
 source /etc/specter/camera-relay.env || { echo "ERROR: camera-relay.env not found" >&2; exit 1; }
 
+if [ "${CAMERA_SOURCE:-ip}" = "picam" ]; then
+  # CSI Pi camera -> hardware H.264 -> RTP to GCS (Zero 2 W, no eth0 / no IP camera)
+  exec gst-launch-1.0 \
+    libcamerasrc ! \
+    video/x-raw,width="${OUTPUT_WIDTH}",height="${OUTPUT_HEIGHT}",framerate="${OUTPUT_FPS}"/1 ! \
+    videoconvert ! \
+    v4l2h264enc extra-controls="controls,video_bitrate=$((OUTPUT_BITRATE*1000)),h264_i_frame_period=${OUTPUT_FPS}" ! \
+    h264parse ! \
+    rtph264pay config-interval=1 pt="${PT}" mtu="${MTU}" ! \
+    udpsink host="${GCS_IP}" port="${VIDEO_PORT}" sync=false async=false
+fi
+
 if [ "$ENCODE_VIDEO" = "true" ]; then
   exec gst-launch-1.0 \
     rtspsrc location="${VIDEO_URL}" latency="${LATENCY}" protocols="${PROTOCOLS}" drop-on-latency=true ! \

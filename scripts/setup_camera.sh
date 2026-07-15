@@ -21,10 +21,19 @@ sudo chmod +x /opt/specter/bin/camera-relay.sh
 sudo mkdir -p /etc/specter
 sudo cp "$SCRIPT_DIR"/config/camera-relay.env.template /etc/specter/camera-relay.env
 
-# Set static IP for camera Ethernet interface
-if ! nmcli con show camera &>/dev/null; then
-  nmcli con add type ethernet con-name camera ifname eth0 \
-    ipv4.addresses 192.168.144.1/24 ipv4.method manual || true
+# shellcheck source=/dev/null
+source /etc/specter/camera-relay.env
+
+if [ "${CAMERA_SOURCE:-ip}" = "picam" ]; then
+  # CSI Pi camera: libcamera GStreamer plugin + camera detection. No eth0.
+  sudo apt install -y gstreamer1.0-libcamera rpicam-apps
+  rpicam-hello --list-cameras || echo "WARNING: no CSI camera detected — check the ribbon cable."
+else
+  # IP camera: static IP on the camera Ethernet interface.
+  if ! nmcli con show camera &>/dev/null; then
+    nmcli con add type ethernet con-name camera ifname eth0 \
+      ipv4.addresses 192.168.144.1/24 ipv4.method manual || true
+  fi
 fi
 
 # Create a systemd service
